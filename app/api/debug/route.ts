@@ -72,13 +72,9 @@ Provide root cause, fixed code, and relevant sources.`,
             if (!sourcesEmitted && fullText.includes('SOURCES:')) {
               const sourceMatch = fullText.match(/SOURCES:\s*(\[[\s\S]*?\])/m)
               if (sourceMatch) {
-                try {
-                  JSON.parse(sourceMatch[1])
-                  controller.enqueue(encoder.encode(`SOURCES: ${sourceMatch[1]}\n`))
-                  sourcesEmitted = true
-                } catch (e) {
-                  // Invalid JSON, skip
-                }
+                // Just emit the raw string without parsing
+                controller.enqueue(encoder.encode(`SOURCES: ${sourceMatch[1]}\n`))
+                sourcesEmitted = true
               }
             }
           }
