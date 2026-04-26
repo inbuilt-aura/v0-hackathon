@@ -33,7 +33,7 @@ export default function Home() {
     if (!error.trim()) return
 
     setIsLoading(true)
-    setOutput({ isLoading: true })
+    setOutput({ isLoading: true, sources: [] })
 
     try {
       const response = await fetch('/api/debug', {
@@ -49,38 +49,36 @@ export default function Home() {
 
       if (!reader) throw new Error('No response body')
 
-      let buffer = ''
+      let fullText = ''
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
+        fullText += decoder.decode(value, { stream: true })
+      }
 
-        buffer += decoder.decode(value)
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
+      // Parse sections from the complete response
+      const rootCauseMatch = fullText.match(/ROOT_CAUSE:\s*([\s\S]*?)(?=\nFIXED_CODE:|\nSOURCES:|$)/m)
+      const fixedCodeMatch = fullText.match(/FIXED_CODE:\s*([\s\S]*?)(?=\nSOURCES:|$)/m)
+      const sourcesMatch = fullText.match(/SOURCES:\s*(\[[\s\S]*?\])/m)
 
-        for (const line of lines) {
-          if (line.startsWith('ROOT_CAUSE:')) {
-            setOutput((prev) => ({
-              ...prev,
-              rootCause: line.replace('ROOT_CAUSE:', '').trim(),
-              isLoading: false,
-            }))
-          } else if (line.startsWith('FIXED_CODE:')) {
-            setOutput((prev) => ({
-              ...prev,
-              fixedCode: line.replace('FIXED_CODE:', '').trim(),
-            }))
-          } else if (line.startsWith('SOURCES:')) {
-            try {
-              const sourcesStr = line.replace('SOURCES:', '').trim()
-              const sources = JSON.parse(sourcesStr)
-              setOutput((prev) => ({ ...prev, sources }))
-            } catch (e) {
-              console.error('Failed to parse sources', e)
-            }
+      const rootCause = rootCauseMatch ? rootCauseMatch[1].trim() : undefined
+      const fixedCode = fixedCodeMatch ? fixedCodeMatch[1].trim() : undefined
+
+      let sources: Source[] = []
+      if (sourcesMatch) {
+        try {
+          const parsed = JSON.parse(sourcesMatch[1])
+          if (Array.isArray(parsed)) {
+            sources = parsed.filter(
+              (s): s is Source => s && typeof s.title === 'string' && typeof s.url === 'string'
+            )
           }
+        } catch {
+          sources = []
         }
       }
+
+      setOutput({ rootCause, fixedCode, sources, isLoading: false })
     } catch (err) {
       console.error('Debug error:', err)
       setOutput({
