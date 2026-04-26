@@ -1,5 +1,10 @@
 import { streamText, tool } from 'ai'
+import { createAnthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
+
+const anthropic = createAnthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+})
 
 const tools = {
   searchWeb: tool({
@@ -50,7 +55,7 @@ export async function POST(request: Request) {
     }
 
     const stream = streamText({
-      model: 'anthropic/claude-sonnet-4-5',
+      model: anthropic('claude-sonnet-4-5'),
       tools,
       maxSteps: 5,
       system: `You are DebugDuck, an AI debugging assistant. Analyze errors and provide solutions.
