@@ -2,11 +2,12 @@ import { streamText, tool } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 
-const groq = createGroq({
-  apiKey: process.env.GROQ_API_KEY,
-})
+const apiKey = process.env.GROQ_API_KEY
+console.log('[v0] GROQ_API_KEY from env:', apiKey ? `${apiKey.substring(0, 10)}...` : 'UNDEFINED')
 
-console.log('[v0] Groq API Key loaded:', process.env.GROQ_API_KEY ? 'YES' : 'NO')
+const groq = createGroq({
+  apiKey,
+})
 
 const tools = {
   searchWeb: tool({
