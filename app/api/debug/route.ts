@@ -3,7 +3,6 @@ import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 
 const apiKey = process.env.GROQ_API_KEY
-console.log('[v0] GROQ_API_KEY from env:', apiKey ? `${apiKey.substring(0, 10)}...` : 'UNDEFINED')
 
 const groq = createGroq({
   apiKey,
@@ -16,18 +15,11 @@ const tools = {
       query: z.string().describe('Search query'),
     }),
     execute: async ({ query }) => {
-      return {
-        results: [
-          {
-            title: 'GitHub Issue',
-            url: `https://github.com/search?q=${encodeURIComponent(query)}`,
-          },
-          {
-            title: 'Stack Overflow',
-            url: `https://stackoverflow.com/search?q=${encodeURIComponent(query)}`,
-          },
-        ],
-      }
+      const results = [
+        { title: 'GitHub Issue', url: `https://github.com/search?q=${encodeURIComponent(query)}` },
+        { title: 'Stack Overflow', url: `https://stackoverflow.com/search?q=${encodeURIComponent(query)}` },
+      ]
+      return JSON.stringify({ results })
     },
   }),
 
@@ -37,14 +29,10 @@ const tools = {
       errorMessage: z.string().describe('Error to search for'),
     }),
     execute: async ({ errorMessage }) => {
-      return {
-        issues: [
-          {
-            title: 'Related Issue',
-            url: `https://github.com/search?q=${encodeURIComponent(errorMessage)}&type=issues`,
-          },
-        ],
-      }
+      const issues = [
+        { title: 'Related Issue', url: `https://github.com/search?q=${encodeURIComponent(errorMessage)}&type=issues` },
+      ]
+      return JSON.stringify({ issues })
     },
   }),
 }
