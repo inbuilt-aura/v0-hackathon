@@ -6,6 +6,8 @@ const groq = createGroq({
   apiKey: process.env.GROQ_API_KEY,
 })
 
+console.log('[v0] Groq API Key loaded:', process.env.GROQ_API_KEY ? 'YES' : 'NO')
+
 const tools = {
   searchWeb: tool({
     description: 'Search for error fixes and solutions',
@@ -83,7 +85,7 @@ Provide root cause, fixed code, and relevant sources.`,
     let fixedCodeEmitted = false
     let sourcesEmitted = false
 
-    return new ReadableStream({
+    const streamResponse = new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of stream.textStream) {
@@ -138,6 +140,14 @@ Provide root cause, fixed code, and relevant sources.`,
         } catch (error) {
           controller.error(error)
         }
+      },
+    })
+
+    return new Response(streamResponse, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
       },
     })
   } catch (error) {
