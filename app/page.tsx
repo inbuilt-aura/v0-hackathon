@@ -3,10 +3,15 @@
 import { useState, useRef } from 'react'
 import { detectLanguage } from '@/lib/language-detector'
 
+interface Source {
+  title: string
+  url: string
+}
+
 interface StreamedOutput {
   rootCause?: string
   fixedCode?: string
-  sources?: string[]
+  sources?: Source[]
   isLoading?: boolean
 }
 
@@ -285,7 +290,14 @@ export default function Home() {
                   {output.sources.map((source, i) => (
                     <li key={i} style={{ fontSize: '0.85rem', color: '#b4b4b4', paddingLeft: '1.25rem', position: 'relative' }}>
                       <span style={{ position: 'absolute', left: 0, color: '#ff8833' }}>→</span>
-                      {source}
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#b4b4b4', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                      >
+                        {source.title}
+                      </a>
                     </li>
                   ))}
                 </ul>
