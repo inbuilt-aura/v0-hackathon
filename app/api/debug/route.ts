@@ -1,11 +1,10 @@
 import { streamText, tool } from 'ai'
-import { anthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
 
 const tools = {
   searchWeb: tool({
     description: 'Search for error fixes and solutions',
-    parameters: z.object({
+    inputSchema: z.object({
       query: z.string().describe('Search query'),
     }),
     execute: async ({ query }) => {
@@ -26,7 +25,7 @@ const tools = {
 
   searchGitHubIssues: tool({
     description: 'Search GitHub issues',
-    parameters: z.object({
+    inputSchema: z.object({
       errorMessage: z.string().describe('Error to search for'),
     }),
     execute: async ({ errorMessage }) => {
@@ -50,8 +49,8 @@ export async function POST(request: Request) {
       return new Response('Error message required', { status: 400 })
     }
 
-    const stream = await streamText({
-      model: anthropic('claude-3-5-sonnet-20241022'),
+    const stream = streamText({
+      model: 'anthropic/claude-sonnet-4-5',
       tools,
       maxSteps: 5,
       system: `You are DebugDuck, an AI debugging assistant. Analyze errors and provide solutions.
@@ -82,7 +81,7 @@ Provide root cause, fixed code, and relevant sources.`,
     return new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of stream.toTextStream()) {
+          for await (const chunk of stream.textStream) {
             fullText += chunk
 
             // Parse ROOT_CAUSE section
