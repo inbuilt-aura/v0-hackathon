@@ -264,7 +264,8 @@ export default function Home() {
                   readOnly
                   style={{
                     width: '100%',
-                    height: '200px',
+                    minHeight: '200px',
+                    height: `${Math.max(200, (output.fixedCode.split('\n').length + 2) * 20)}px`,
                     backgroundColor: '#0f0f0f',
                     color: '#f5f5f5',
                     fontFamily: '"Fira Code", "Courier New", monospace',
@@ -273,7 +274,9 @@ export default function Home() {
                     borderRadius: '0.5rem',
                     border: '1px solid #2a2a2a',
                     outline: 'none',
-                    resize: 'none',
+                    resize: 'vertical',
+                    overflowY: 'auto',
+                    boxSizing: 'border-box',
                   }}
                 />
               </div>
