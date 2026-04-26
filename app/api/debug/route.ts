@@ -49,18 +49,18 @@ Provide root cause, fixed code, and relevant sources.`,
           for await (const chunk of stream.textStream) {
             fullText += chunk
 
-            // Parse ROOT_CAUSE section
-            if (!rootCauseEmitted && fullText.includes('ROOT_CAUSE:')) {
-              const match = fullText.match(/ROOT_CAUSE:\s*([^\n]+(?:\n(?!FIXED_CODE:|SOURCES:)[^\n]*)*)/m)
-              if (match) {
-                const rootCause = match[1].trim()
+            // Only emit ROOT_CAUSE once FIXED_CODE: has appeared (guarantees root cause text is complete)
+            if (!rootCauseEmitted && fullText.includes('FIXED_CODE:')) {
+              const match = fullText.match(/ROOT_CAUSE:\s*([\s\S]*?)\n\s*\nFIXED_CODE:/m)
+              const rootCause = match ? match[1].trim() : fullText.split('FIXED_CODE:')[0].replace('ROOT_CAUSE:', '').trim()
+              if (rootCause) {
                 controller.enqueue(encoder.encode(`ROOT_CAUSE: ${rootCause}\n`))
                 rootCauseEmitted = true
               }
             }
 
-            // Parse FIXED_CODE section
-            if (!fixedCodeEmitted && fullText.includes('FIXED_CODE:')) {
+            // Only emit FIXED_CODE once SOURCES: has appeared (guarantees code block is complete)
+            if (!fixedCodeEmitted && fullText.includes('SOURCES:')) {
               const codeMatch = fullText.match(/FIXED_CODE:\s*```[\w]*\n?([\s\S]*?)\n?```/m)
               if (codeMatch) {
                 controller.enqueue(encoder.encode(`FIXED_CODE: ${codeMatch[1].trim()}\n`))
@@ -68,26 +68,29 @@ Provide root cause, fixed code, and relevant sources.`,
               }
             }
 
-            // Parse SOURCES section
+            // Only emit SOURCES once the closing bracket ] is present
             if (!sourcesEmitted && fullText.includes('SOURCES:')) {
               const sourceMatch = fullText.match(/SOURCES:\s*(\[[\s\S]*?\])/m)
               if (sourceMatch) {
-                // Just emit the raw string without parsing
                 controller.enqueue(encoder.encode(`SOURCES: ${sourceMatch[1]}\n`))
                 sourcesEmitted = true
               }
             }
           }
 
-          // Emit fallback if needed
+          // Emit any remaining sections after stream ends
           if (!rootCauseEmitted) {
-            controller.enqueue(encoder.encode(`ROOT_CAUSE: Check the error message carefully\n`))
+            const match = fullText.match(/ROOT_CAUSE:\s*([\s\S]*?)(?:\n\s*\nFIXED_CODE:|$)/m)
+            const rootCause = match ? match[1].trim() : 'Check the error message carefully'
+            controller.enqueue(encoder.encode(`ROOT_CAUSE: ${rootCause}\n`))
           }
           if (!fixedCodeEmitted) {
-            controller.enqueue(encoder.encode(`FIXED_CODE: ${code}\n`))
+            const codeMatch = fullText.match(/FIXED_CODE:\s*```[\w]*\n?([\s\S]*?)\n?```/m)
+            controller.enqueue(encoder.encode(`FIXED_CODE: ${codeMatch ? codeMatch[1].trim() : code}\n`))
           }
           if (!sourcesEmitted) {
-            controller.enqueue(encoder.encode(`SOURCES: []\n`))
+            const sourceMatch = fullText.match(/SOURCES:\s*(\[[\s\S]*?\])/m)
+            controller.enqueue(encoder.encode(`SOURCES: ${sourceMatch ? sourceMatch[1] : '[]'}\n`))
           }
 
           controller.close()
