@@ -1,9 +1,9 @@
 import { streamText, tool } from 'ai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
 })
 
 const tools = {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     }
 
     const stream = streamText({
-      model: google('gemini-2.0-flash'),
+      model: groq('llama-3.3-70b-versatile'),
       tools,
       maxSteps: 5,
       system: `You are DebugDuck, an AI debugging assistant. Analyze errors and provide solutions.
