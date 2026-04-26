@@ -1,41 +1,11 @@
-import { streamText, tool } from 'ai'
+import { streamText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
-import { z } from 'zod'
 
 const apiKey = process.env.GROQ_API_KEY
 
 const groq = createGroq({
   apiKey,
 })
-
-const tools = {
-  searchWeb: tool({
-    description: 'Search for error fixes and solutions',
-    inputSchema: z.object({
-      query: z.string().describe('Search query'),
-    }),
-    execute: async ({ query }) => {
-      const results = [
-        { title: 'GitHub Issue', url: `https://github.com/search?q=${encodeURIComponent(query)}` },
-        { title: 'Stack Overflow', url: `https://stackoverflow.com/search?q=${encodeURIComponent(query)}` },
-      ]
-      return JSON.stringify({ results })
-    },
-  }),
-
-  searchGitHubIssues: tool({
-    description: 'Search GitHub issues',
-    inputSchema: z.object({
-      errorMessage: z.string().describe('Error to search for'),
-    }),
-    execute: async ({ errorMessage }) => {
-      const issues = [
-        { title: 'Related Issue', url: `https://github.com/search?q=${encodeURIComponent(errorMessage)}&type=issues` },
-      ]
-      return JSON.stringify({ issues })
-    },
-  }),
-}
 
 export async function POST(request: Request) {
   try {
@@ -47,7 +17,6 @@ export async function POST(request: Request) {
 
     const stream = streamText({
       model: groq('llama-3.3-70b-versatile'),
-      tools,
       maxSteps: 5,
       system: `You are DebugDuck, an AI debugging assistant. Analyze errors and provide solutions.
 
@@ -57,7 +26,7 @@ ROOT_CAUSE: [Clear explanation of what went wrong]
 
 FIXED_CODE: [The corrected code in markdown code block with language]
 
-SOURCES: [JSON array of {"title": "...", "url": "..."} objects]`,
+SOURCES: [JSON array of relevant links like {"title": "GitHub", "url": "https://..."}]`,
       prompt: `Debug this error:
 
 Error: ${error}
