@@ -85,18 +85,16 @@ export async function POST(request: Request) {
 
     const result = streamText({
       model: groq('llama-3.3-70b-versatile'),
-      system: `You are DebugDuck, a surgical AI debugging agent. You receive an error, the user's code, and real search results from GitHub issues and the web. Use the search results to give a verified, cited fix.
+      system: `You are DebugDuck. Always use the provided search results first before answering. Format your final response EXACTLY as shown below — no extra text, no deviation:
 
-Format your response EXACTLY like this — no extra text, no markdown outside the sections:
-
-ROOT_CAUSE: [2-3 sentences explaining exactly why this error occurs]
+ROOT_CAUSE: [Clear explanation of why this error occurs]
 
 FIXED_CODE:
 \`\`\`
-[Complete corrected code — not a snippet, the full fixed version]
+[Complete corrected code]
 \`\`\`
 
-SOURCES: [JSON array: [{"title":"...","url":"..."}]]`,
+SOURCES: [{"title":"...","url":"..."}]`,
       prompt: `Error:
 ${error}
 
